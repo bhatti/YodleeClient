@@ -1,11 +1,7 @@
-package com.plexobject.yodlee.response;
+package com.plexobject.yodlee.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.plexobject.yodlee.domain.Credentials;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserLoginResponse {
-    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class UserContext {
         private Long cobrandId;
         private Credentials conversationCredentials;

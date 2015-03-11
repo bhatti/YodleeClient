@@ -30,8 +30,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.plexobject.yodlee.domain.YodleeClientException;
 import com.plexobject.yodlee.util.Configuration;
 
@@ -54,6 +57,11 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
                         "https://rest.developer.yodlee.com/services/srest/restserver/v1.0/");
         this.httpClient = httpClient;
         this.jsonMapper = new ObjectMapper();
+        this.jsonMapper.setSerializationInclusion(Include.NON_NULL);
+        this.jsonMapper.configure(
+                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.jsonMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,
+                false);
         int timeout = config.getInteger("connectionTimeout", 5000);
         this.requestConfig = RequestConfig.custom().setSocketTimeout(timeout)
                 .setConnectTimeout(timeout)
@@ -161,6 +169,9 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
 
             if (HttpStatus.SC_OK == statusCode) {
                 T responseBody = jsonMapper.readValue(strResp, clazz);
+                // return new JsonObjectCodec().decode(mappingJson,
+                // new TypeReference<List<EventBusToJmsEntry>>() {
+                // });
                 return HttpResponseWrapper.create(statusCode, responseBody);
             } else if (HttpStatus.SC_CREATED == statusCode) {
                 // MfaResponse mfaResponse = jsonMapper.convertValue(jsonBody,

@@ -1,9 +1,6 @@
-package com.plexobject.yodlee.response;
+package com.plexobject.yodlee.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.plexobject.yodlee.domain.Credentials;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class CobrandLoginResponse {
     private Long cobrandId;
     private String applicationId;
