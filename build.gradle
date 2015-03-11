@@ -1,0 +1,33 @@
+apply plugin: 'eclipse'
+apply plugin: 'java'
+apply plugin:'application'
+apply plugin: 'war'
+apply plugin: 'jetty'
+
+mainClassName = 'TestClient'
+
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    // Use 'maven central' for resolving your dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    mavenCentral()
+}
+
+
+// In this section you declare the dependencies for your production and test code
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'org.apache.httpcomponents:httpclient:4.3.3'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.2.3'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.2.3'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.2.3'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.2.3'
+    compile 'joda-time:joda-time:2.3'
+    compile 'commons-lang:commons-lang:2.6'
+    compile 'com.timgroup:java-statsd-client:3.0.2'
+    compile 'com.thoughtworks.xstream:xstream:1.4.7'
+    runtime 'ch.qos.logback:logback-classic:1.1.1'
+
+    testCompile 'junit:junit:4.11'
+}
