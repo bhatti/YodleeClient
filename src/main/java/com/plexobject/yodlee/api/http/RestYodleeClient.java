@@ -1,13 +1,17 @@
 package com.plexobject.yodlee.api.http;
 
-import java.util.Arrays;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.plexobject.yodlee.api.YodleeClient;
+import com.plexobject.yodlee.domain.AddItemAndStartVerificationRequest;
 import com.plexobject.yodlee.domain.AddItemAndStartVerificationResponse;
 import com.plexobject.yodlee.domain.CobrandLoginResponse;
 import com.plexobject.yodlee.domain.ContentServiceInfoResponse;
+import com.plexobject.yodlee.domain.FormField;
+import com.plexobject.yodlee.domain.GetItemVerificationDataRequest;
 import com.plexobject.yodlee.domain.GetItemVerificationDataResponse;
+import com.plexobject.yodlee.domain.UserLoginRequest;
 import com.plexobject.yodlee.domain.UserLoginResponse;
 import com.plexobject.yodlee.util.Configuration;
 
@@ -33,13 +37,12 @@ public class RestYodleeClient implements YodleeClient {
     }
 
     @Override
-    public UserLoginResponse loginUser(String session, String login,
-            String password) {
-        final HttpRequest request = new HttpRequest("authenticate/login",
-                "cobSessionToken", session, "login", login, "password",
-                password);
+    public UserLoginResponse loginUser(UserLoginRequest request) {
+        final HttpRequest httpRequest = new HttpRequest("authenticate/login",
+                "cobSessionToken", request.getCobSessionToken(), "login",
+                request.getUsername(), "password", request.getPassword());
         HttpResponseWrapper<UserLoginResponse> resp = httpDelegate.doPost(
-                request, UserLoginResponse.class);
+                httpRequest, UserLoginResponse.class);
         return resp.getResponseBody();
     }
 
@@ -59,46 +62,55 @@ public class RestYodleeClient implements YodleeClient {
 
     @Override
     public AddItemAndStartVerificationResponse addItemAndStartVerificationDataRequest(
-            String cobSessionToken, String userSessionToken) {
-        final HttpRequest request = new HttpRequest(
+            AddItemAndStartVerificationRequest request) {
+        final Map<String, String> params = new HashMap<>();
+        params.put("cobSessionToken", request.getCobSessionToken());
+        params.put("userSessionToken", request.getUserSessionToken());
+        params.put("accountNumber", request.getAccountNumber());
+        params.put("contentServiceId",
+                String.valueOf(request.getContentServiceId()));
+        params.put("credentialFields.enclosedType",
+                "com.yodlee.common.FieldInfoSingle");
+        int i = 0;
+        for (FormField field : request.getFields()) {
+            params.put("credentialFields[" + i + "].name", field.getName());
+            params.put("credentialFields[" + i + "].displayName",
+                    field.getDisplayName());
+            params.put("credentialFields[" + i + "].fieldType", field
+                    .getFieldType().getTypeName());
+            params.put("credentialFields[" + i + "].helpText",
+                    field.getHelpText());
+            params.put("credentialFields[" + i + "].isEditable",
+                    String.valueOf(field.isEditable()));
+            params.put("credentialFields[" + i + "].maxlength",
+                    String.valueOf(field.getMaxlength()));
+            params.put("credentialFields[" + i + "].size",
+                    String.valueOf(field.getSize()));
+            params.put("credentialFields[" + i + "].value", field.getValue());
+            params.put("credentialFields[" + i + "].valueIdentifier",
+                    field.getValueIdentifier());
+            params.put("credentialFields[" + i + "].valueMask",
+                    field.getValueMask());
+            i++;
+        }
+        final HttpRequest httpRequest = new HttpRequest(
                 "jsonsdk/ExtendedInstantVerificationDataService/addItemAndStartVerificationDataRequest",
-                "cobSessionToken", cobSessionToken, "userSessionToken",
-                userSessionToken, "accountNumber", "503-1123001",
-                "contentServiceId", "11195", "credentialFields.enclosedType",
-                "com.yodlee.common.FieldInfoSingle",
-                "credentialFields[0].displayName", "USLoginId",
-                "credentialFields[0].fieldType", "TEXT",
-                "credentialFields[0].helpText", "22059",
-                "credentialFields[0].isEditable", "true",
-                "credentialFields[0].maxlength", "40",
-                "credentialFields[0].name", "LOGIN",
-                "credentialFields[0].size", "20", "credentialFields[0].value",
-                "dataservice.bank1", "credentialFields[0].valueIdentifier",
-                "LOGIN", "credentialFields[0].valueMask", "LOGIN_FIELD",
-                "credentialFields[1].displayName", "USPassword",
-                "credentialFields[1].fieldType", "PASSWORD",
-                "credentialFields[1].helpText", "22058",
-                "credentialFields[1].isEditable", "true",
-                "credentialFields[1].maxlength", "40",
-                "credentialFields[1].name", "PASSWORD1",
-                "credentialFields[1].size", "20", "credentialFields[1].value",
-                "bank1", "credentialFields[1].valueIdentifier", "PASSWORD1",
-                "credentialFields[1].valueMask", "LOGIN_FIELD",
-                "routingNumber", "999999989");
+                0, params);
         HttpResponseWrapper<AddItemAndStartVerificationResponse> resp = httpDelegate
-                .doPost(request, AddItemAndStartVerificationResponse.class);
+                .doPost(httpRequest, AddItemAndStartVerificationResponse.class);
         return resp.getResponseBody();
     }
 
     @Override
     public GetItemVerificationDataResponse[] getItemVerificationData(
-            String cobSessionToken, String userSessionToken, Long... itemIds) {
-        final HttpRequest request = new HttpRequest(
+            GetItemVerificationDataRequest request) {
+        final HttpRequest httpRequest = new HttpRequest(
                 "jsonsdk/InstantVerificationDataService/getItemVerificationData",
-                "cobSessionToken", cobSessionToken, "userSessionToken",
-                userSessionToken, "itemIds[0]", String.valueOf(itemIds[0]));
+                "cobSessionToken", request.getCobSessionToken(),
+                "userSessionToken", request.getUserSessionToken(),
+                "itemIds[0]", String.valueOf(request.getItemIds()[0]));
         HttpResponseWrapper<GetItemVerificationDataResponse[]> resp = httpDelegate
-                .doPost(request, GetItemVerificationDataResponse[].class);
+                .doPost(httpRequest, GetItemVerificationDataResponse[].class);
         return resp.getResponseBody();
     }
 

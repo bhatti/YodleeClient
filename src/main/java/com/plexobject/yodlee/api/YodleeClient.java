@@ -1,9 +1,12 @@
 package com.plexobject.yodlee.api;
 
+import com.plexobject.yodlee.domain.AddItemAndStartVerificationRequest;
 import com.plexobject.yodlee.domain.AddItemAndStartVerificationResponse;
 import com.plexobject.yodlee.domain.CobrandLoginResponse;
 import com.plexobject.yodlee.domain.ContentServiceInfoResponse;
+import com.plexobject.yodlee.domain.GetItemVerificationDataRequest;
 import com.plexobject.yodlee.domain.GetItemVerificationDataResponse;
+import com.plexobject.yodlee.domain.UserLoginRequest;
 import com.plexobject.yodlee.domain.UserLoginResponse;
 
 /**
@@ -15,15 +18,15 @@ import com.plexobject.yodlee.domain.UserLoginResponse;
 public interface YodleeClient {
     CobrandLoginResponse loginCobrand();
 
-    UserLoginResponse loginUser(String session, String username, String password);
+    UserLoginResponse loginUser(UserLoginRequest request);
 
     ContentServiceInfoResponse getContentServiceInfoByRoutingNumber(
             String cobSessionToken, String userSessionToken,
             String routingNumber);
 
     AddItemAndStartVerificationResponse addItemAndStartVerificationDataRequest(
-            String cobSessionToken, String userSessionToken);
+            AddItemAndStartVerificationRequest request);
 
     GetItemVerificationDataResponse[] getItemVerificationData(
-            String cobSessionToken, String userSessionToken, Long... itemIds);
+            GetItemVerificationDataRequest request);
 }
