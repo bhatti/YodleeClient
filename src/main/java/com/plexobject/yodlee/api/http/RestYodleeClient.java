@@ -69,7 +69,7 @@ public class RestYodleeClient implements YodleeClient {
     @Override
     public AddItemAndStartVerificationResponse addItemAndStartVerificationDataRequest(
             AddItemAndStartVerificationRequest request) {
-        final Map<String, String> params = new HashMap<>();
+        final Map<String, String> params = new HashMap<String, String>();
         params.put("cobSessionToken", request.getCobSessionToken());
         params.put("userSessionToken", request.getUserSessionToken());
         params.put("accountNumber", request.getAccountNumber());

@@ -55,7 +55,7 @@ public class HttpRequest {
     }
 
     private static Map<String, String> toMap(String... params) {
-        Map<String, String> map = new HashMap<>();
+        Map<String, String> map = new HashMap<String, String>();
         for (int i = 0; i < params.length; i += 2) {
             map.put(params[i], params[i + 1]);
         }

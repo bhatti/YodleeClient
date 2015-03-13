@@ -181,9 +181,13 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
                 throw new YodleeClientException("Unable to interpret response");
             }
         } catch (JsonParseException e) {
-            throw new YodleeClientException("Unexpected resp " + strResp);
-        } catch (IllegalStateException | IOException e) {
-            throw new YodleeClientException("API error " + strResp, e);
+            throw new YodleeClientException("Unexpected API resp " + strResp);
+        } catch (IllegalStateException e) {
+            throw new YodleeClientException("Unexpected API error " + strResp,
+                    e);
+        } catch (IOException e) {
+            throw new YodleeClientException("Unexpected API error " + strResp,
+                    e);
         } finally {
             try {
                 response.close();
