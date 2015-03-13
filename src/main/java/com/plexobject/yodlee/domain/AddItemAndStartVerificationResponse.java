@@ -1,6 +1,6 @@
 package com.plexobject.yodlee.domain;
 
-public class AddItemAndStartVerificationResponse {
+public class AddItemAndStartVerificationResponse extends BaseResponse {
     public static class RefreshStatus {
         private int status;
 

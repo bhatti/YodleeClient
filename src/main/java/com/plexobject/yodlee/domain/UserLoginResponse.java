@@ -1,7 +1,6 @@
 package com.plexobject.yodlee.domain;
 
-
-public class UserLoginResponse {
+public class UserLoginResponse extends BaseResponse {
     public static class UserContext {
         private Long cobrandId;
         private Credentials conversationCredentials;

@@ -8,6 +8,14 @@ package com.plexobject.yodlee.domain;
  */
 public class YodleeClientException extends RuntimeException {
     private static final long serialVersionUID = 1L;
+    private String exceptionType;
+    private String referenceCode;
+
+    public YodleeClientException(BaseResponse response) {
+        super(response.getMessage());
+        this.exceptionType = response.getExceptionType();
+        this.referenceCode = response.getReferenceCode();
+    }
 
     public YodleeClientException(String message, Throwable cause) {
         super(message, cause);
@@ -19,6 +27,22 @@ public class YodleeClientException extends RuntimeException {
 
     public YodleeClientException(Throwable cause) {
         super(cause);
+    }
+
+    public String getExceptionType() {
+        return exceptionType;
+    }
+
+    public void setExceptionType(String exceptionType) {
+        this.exceptionType = exceptionType;
+    }
+
+    public String getReferenceCode() {
+        return referenceCode;
+    }
+
+    public void setReferenceCode(String referenceCode) {
+        this.referenceCode = referenceCode;
     }
 
 }

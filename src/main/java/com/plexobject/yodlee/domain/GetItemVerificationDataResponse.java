@@ -1,6 +1,6 @@
 package com.plexobject.yodlee.domain;
 
-public class GetItemVerificationDataResponse {
+public class GetItemVerificationDataResponse extends BaseResponse {
     public static class ItemVerificationInfo {
         private Long itemId;
         private Long contentServiceId;

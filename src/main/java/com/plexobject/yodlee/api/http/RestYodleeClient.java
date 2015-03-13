@@ -1,18 +1,28 @@
 package com.plexobject.yodlee.api.http;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.plexobject.yodlee.api.YodleeClient;
 import com.plexobject.yodlee.domain.AddItemAndStartVerificationRequest;
 import com.plexobject.yodlee.domain.AddItemAndStartVerificationResponse;
+import com.plexobject.yodlee.domain.BaseResponse;
 import com.plexobject.yodlee.domain.CobrandLoginResponse;
+import com.plexobject.yodlee.domain.ContentServiceInfoRequest;
 import com.plexobject.yodlee.domain.ContentServiceInfoResponse;
 import com.plexobject.yodlee.domain.FormField;
 import com.plexobject.yodlee.domain.GetItemVerificationDataRequest;
 import com.plexobject.yodlee.domain.GetItemVerificationDataResponse;
+import com.plexobject.yodlee.domain.MFARequest;
+import com.plexobject.yodlee.domain.MFAResponse;
+import com.plexobject.yodlee.domain.StartRefreshRequest;
+import com.plexobject.yodlee.domain.StartRefreshRequestResponse;
 import com.plexobject.yodlee.domain.UserLoginRequest;
 import com.plexobject.yodlee.domain.UserLoginResponse;
+import com.plexobject.yodlee.domain.YodleeClientException;
 import com.plexobject.yodlee.util.Configuration;
 
 public class RestYodleeClient implements YodleeClient {
@@ -33,7 +43,7 @@ public class RestYodleeClient implements YodleeClient {
                 cobrandPassword);
         HttpResponseWrapper<CobrandLoginResponse> resp = httpDelegate.doPost(
                 request, CobrandLoginResponse.class);
-        return resp.getResponseBody();
+        return getResponse(resp);
     }
 
     @Override
@@ -43,21 +53,20 @@ public class RestYodleeClient implements YodleeClient {
                 request.getUsername(), "password", request.getPassword());
         HttpResponseWrapper<UserLoginResponse> resp = httpDelegate.doPost(
                 httpRequest, UserLoginResponse.class);
-        return resp.getResponseBody();
+        return getResponse(resp);
     }
 
     @Override
     public ContentServiceInfoResponse getContentServiceInfoByRoutingNumber(
-            String cobSessionToken, String userSessionToken,
-            String routingNumber) {
-        final HttpRequest request = new HttpRequest(
+            ContentServiceInfoRequest request) {
+        final HttpRequest httpRequest = new HttpRequest(
                 "jsonsdk/RoutingNumberService/getContentServiceInfoByRoutingNumber",
-                "cobSessionToken", cobSessionToken, "userSessionToken",
-                userSessionToken, "notrim", "true", "routingNumber",
-                routingNumber);
+                "cobSessionToken", request.getCobSessionToken(),
+                "userSessionToken", request.getUserSessionToken(), "notrim",
+                "true", "routingNumber", request.getRoutingNumber());
         HttpResponseWrapper<ContentServiceInfoResponse> resp = httpDelegate
-                .doPost(request, ContentServiceInfoResponse.class);
-        return resp.getResponseBody();
+                .doPost(httpRequest, ContentServiceInfoResponse.class);
+        return getResponse(resp);
     }
 
     @Override
@@ -98,7 +107,7 @@ public class RestYodleeClient implements YodleeClient {
                 0, params);
         HttpResponseWrapper<AddItemAndStartVerificationResponse> resp = httpDelegate
                 .doPost(httpRequest, AddItemAndStartVerificationResponse.class);
-        return resp.getResponseBody();
+        return getResponse(resp);
     }
 
     @Override
@@ -112,6 +121,51 @@ public class RestYodleeClient implements YodleeClient {
         HttpResponseWrapper<GetItemVerificationDataResponse[]> resp = httpDelegate
                 .doPost(httpRequest, GetItemVerificationDataResponse[].class);
         return resp.getResponseBody();
+    }
+
+    @Override
+    public MFAResponse getMFAResponse(MFARequest request) {
+        final HttpRequest httpRequest = new HttpRequest(
+                "jsonsdk/Refresh/getMFAResponse", "cobSessionToken",
+                request.getCobSessionToken(), "userSessionToken",
+                request.getUserSessionToken(), "itemId", String.valueOf(request
+                        .getItemId()));
+        HttpResponseWrapper<MFAResponse> resp = httpDelegate.doPost(
+                httpRequest, MFAResponse.class);
+        return getResponse(resp);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    public StartRefreshRequestResponse startRefresh(StartRefreshRequest request) {
+        final HttpRequest httpRequest = new HttpRequest(
+                "jsonsdk/Refresh/startRefresh", "cobSessionToken",
+                request.getCobSessionToken(), "userSessionToken",
+                request.getUserSessionToken(), "refreshPriority", "1",
+                "itemIds[0]", String.valueOf(request.getItemIds()[0]));
+        HttpResponseWrapper<Map> resp = httpDelegate.doPost(httpRequest,
+                Map.class);
+        StartRefreshRequestResponse startRefreshRequestResponse = new StartRefreshRequestResponse();
+        Map<String, Object> mapResp = resp.getResponseBody();
+        if (mapResp.size() > 0) {
+            Map<String, Object> statusMap = (Map<String, Object>) mapResp
+                    .values().iterator().next();
+            if (statusMap.size() > 0) {
+                Integer status = (Integer) statusMap.get("status");
+                startRefreshRequestResponse.setStatus(status);
+            }
+        }
+        return startRefreshRequestResponse;
+    }
+
+
+    private static <T extends BaseResponse> T getResponse(
+            HttpResponseWrapper<T> wrapper) {
+        final T response = wrapper.getResponseBody();
+        if (response.isErrorOccurred()) {
+            throw new YodleeClientException(response);
+        }
+        return response;
     }
 
 }

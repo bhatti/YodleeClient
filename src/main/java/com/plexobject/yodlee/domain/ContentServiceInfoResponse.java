@@ -2,7 +2,7 @@ package com.plexobject.yodlee.domain;
 
 import com.plexobject.yodlee.domain.LoginForm.ContainerInfo;
 
-public class ContentServiceInfoResponse {
+public class ContentServiceInfoResponse extends BaseResponse {
     private Long contentServiceId;
     private Long serviceId;
     private Long organizationId;

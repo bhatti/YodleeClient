@@ -17,10 +17,12 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.plexobject.yodlee.domain.BaseResponse;
 import com.plexobject.yodlee.domain.YodleeClientException;
 import com.plexobject.yodlee.util.Configuration;
 
@@ -76,24 +79,7 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
 
         try {
             HttpPost post = new HttpPost(baseUri + request.getPath());
-            post.setConfig(requestConfig);
-            HttpEntity entity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(entity);
-            System.out.println("REQUEST " + request);
-
-            if (request.hasTimeout()) {
-                int timeout = request.getTimeout();
-
-                RequestConfig config = RequestConfig.custom()
-                        .setConnectTimeout(timeout).setSocketTimeout(timeout)
-                        .setConnectionRequestTimeout(timeout).build();
-                post.setConfig(config);
-            }
-
-            addUserAgent(post);
-
-            CloseableHttpResponse response = httpClient.execute(post);
-            return handleResponse(post, response, clazz);
+            return execute(request, post, parameters, clazz);
         } catch (UnsupportedEncodingException e) {
             throw new YodleeClientException(e);
         } catch (IOException e) {
@@ -108,17 +94,9 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
 
             URI uri = new URIBuilder(baseUri).setPath(request.getPath())
                     .addParameters(parameters).build();
-
             System.out.println("REQUEST " + request);
             HttpGet get = new HttpGet(uri);
-            get.setConfig(requestConfig);
-
-            addUserAgent(get);
-
-            CloseableHttpResponse response = httpClient.execute(get);
-
-            return handleResponse(get, response, clazz);
-
+            return execute(request, get, parameters, clazz);
         } catch (UnsupportedEncodingException e) {
             throw new YodleeClientException(e);
         } catch (IOException e) {
@@ -137,13 +115,7 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
                     .addParameters(parameters).build();
 
             HttpDelete delete = new HttpDelete(uri);
-            delete.setConfig(requestConfig);
-
-            addUserAgent(delete);
-
-            CloseableHttpResponse response = httpClient.execute(delete);
-
-            return handleResponse(delete, response, clazz);
+            return execute(request, delete, parameters, clazz);
         } catch (UnsupportedEncodingException e) {
             throw new YodleeClientException(e);
         } catch (IOException e) {
@@ -151,6 +123,31 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
         } catch (URISyntaxException e) {
             throw new YodleeClientException(e);
         }
+    }
+
+    private <T> HttpResponseWrapper<T> execute(HttpRequest request,
+            HttpRequestBase baseRequest, List<NameValuePair> parameters,
+            Class<T> clazz) throws ClientProtocolException, IOException {
+        baseRequest.setConfig(requestConfig);
+        if (baseRequest instanceof HttpEntityEnclosingRequestBase) {
+            HttpEntity entity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            ((HttpEntityEnclosingRequestBase) baseRequest).setEntity(entity);
+        }
+        System.out.println("REQUEST " + request);
+
+        if (request.hasTimeout()) {
+            int timeout = request.getTimeout();
+
+            RequestConfig config = RequestConfig.custom()
+                    .setConnectTimeout(timeout).setSocketTimeout(timeout)
+                    .setConnectionRequestTimeout(timeout).build();
+            baseRequest.setConfig(config);
+        }
+
+        addUserAgent(baseRequest);
+
+        CloseableHttpResponse response = httpClient.execute(baseRequest);
+        return handleResponse(baseRequest, response, clazz);
     }
 
     private <T> HttpResponseWrapper<T> handleResponse(HttpRequestBase request,
@@ -164,28 +161,24 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
                 strResp = EntityUtils.toString(entity);
                 System.out.println("RESPONSE: " + strResp);
             }
+            //
             EntityUtils.consume(responseEntity);
-            // wireLog(request, response, jsonBody);
-
             if (HttpStatus.SC_OK == statusCode) {
-                T responseBody = jsonMapper.readValue(strResp, clazz);
-                // return new JsonObjectCodec().decode(mappingJson,
-                // new TypeReference<List<EventBusToJmsEntry>>() {
-                // });
+                T responseBody = null;
+                if (clazz.isArray()) {
+                    if (strResp.length() > 0 && strResp.charAt(0) == '[') {
+                        responseBody = jsonMapper.readValue(strResp, clazz);
+                    } else {
+                        BaseResponse error = jsonMapper.readValue(strResp,
+                                BaseResponse.class);
+                        throw new YodleeClientException(error);
+                    }
+                } else {
+                    responseBody = jsonMapper.readValue(strResp, clazz);
+                }
                 return HttpResponseWrapper.create(statusCode, responseBody);
-            } else if (HttpStatus.SC_CREATED == statusCode) {
-                // MfaResponse mfaResponse = jsonMapper.convertValue(jsonBody,
-                // MfaResponse.class);
-                throw new YodleeClientException("?????");
-            } else if (statusCode >= HttpStatus.SC_BAD_REQUEST) {
-                //
-                // ErrorResponse errorResponse =
-                // jsonMapper.convertValue(jsonBody,
-                // ErrorResponse.class);
-                throw new YodleeClientException("?????");
             } else {
-                throw new YodleeClientException(
-                        "Unable to interpret Plaid response");
+                throw new YodleeClientException("Unable to interpret response");
             }
         } catch (JsonParseException e) {
             throw new YodleeClientException("Unexpected resp " + strResp);
@@ -219,24 +212,6 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
         }
         CloseableHttpClient httpClient = HttpClients.createDefault();
         return httpClient;
-
-        // HttpParams params = new BasicHttpParams();
-        // HttpConnectionParams.setConnectionTimeout(params, 10000);
-        // HttpConnectionParams.setSoTimeout(params, 30000);
-        // SSLContext ctx = SSLContext.getInstance("TLS");
-        //
-        // ctx.init(null, new TrustManager[] { nullX509TM }, new
-        // SecureRandom());
-        // SSLSocketFactory ssf = new SSLSocketFactory(ctx);
-        // PoolingClientConnectionManager cxMgr = new
-        // PoolingClientConnectionManager(
-        // SchemeRegistryFactory.createDefault());
-        // cxMgr.setMaxTotal(100);
-        // cxMgr.setDefaultMaxPerRoute(20);
-        //
-        // SchemeRegistry sr = cxMgr.getSchemeRegistry();
-        // sr.register(new Scheme("https", 443, ssf));
-        // return new DefaultHttpClient(cxMgr, params);
     }
 
     private static class NullHostnameVerifier implements HostnameVerifier {
