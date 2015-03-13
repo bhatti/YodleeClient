@@ -158,7 +158,6 @@ public class RestYodleeClient implements YodleeClient {
         return startRefreshRequestResponse;
     }
 
-
     private static <T extends BaseResponse> T getResponse(
             HttpResponseWrapper<T> wrapper) {
         final T response = wrapper.getResponseBody();
