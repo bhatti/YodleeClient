@@ -1,10 +1,7 @@
 package com.plexobject.yodlee.api.http;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import com.plexobject.yodlee.api.YodleeClient;
 import com.plexobject.yodlee.domain.AddItemAndStartVerificationRequest;
