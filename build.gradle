@@ -5,6 +5,7 @@ apply plugin: 'war'
 apply plugin: 'jetty'
 
 mainClassName = 'TestClient'
+version='0.1-SNAPSHOT'
 
 
 // In this section you declare where to find the dependencies of your project

@@ -15,7 +15,7 @@ public class HttpRequest {
     private Integer timeout;
 
     public HttpRequest(String path) {
-        this(path, 0, new HashMap<String, String>());
+        this(path, null, new HashMap<String, String>());
     }
 
     public HttpRequest(String path, Integer timeout, String... parameters) {
@@ -23,7 +23,7 @@ public class HttpRequest {
     }
 
     public HttpRequest(String path, String... parameters) {
-        this(path, 0, toMap(parameters));
+        this(path, null, toMap(parameters));
     }
 
     public HttpRequest(String path, Integer timeout,
@@ -51,7 +51,7 @@ public class HttpRequest {
     }
 
     public boolean hasTimeout() {
-        return timeout != null;
+        return timeout != null && timeout > 0;
     }
 
     private static Map<String, String> toMap(String... params) {

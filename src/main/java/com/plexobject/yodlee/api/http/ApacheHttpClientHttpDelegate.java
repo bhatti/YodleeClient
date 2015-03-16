@@ -44,7 +44,7 @@ import com.plexobject.yodlee.util.Configuration;
 public class ApacheHttpClientHttpDelegate implements HttpDelegate {
     private final String baseUri;
     private final CloseableHttpClient httpClient;
-    private final RequestConfig requestConfig;
+    private final RequestConfig defaultRequestConfig;
     private final ObjectMapper jsonMapper;
     private static String LIBRARY_VERSION = ApacheHttpClientHttpDelegate.class
             .getPackage().getImplementationVersion();
@@ -66,8 +66,8 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
         this.jsonMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,
                 false);
         int timeout = config.getInteger("connectionTimeout", 5000);
-        this.requestConfig = RequestConfig.custom().setSocketTimeout(timeout)
-                .setConnectTimeout(timeout)
+        this.defaultRequestConfig = RequestConfig.custom()
+                .setSocketTimeout(timeout).setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout).build();
         if (LIBRARY_VERSION == null) {
             LIBRARY_VERSION = "development version";
@@ -128,7 +128,16 @@ public class ApacheHttpClientHttpDelegate implements HttpDelegate {
     private <T> HttpResponseWrapper<T> execute(HttpRequest request,
             HttpRequestBase baseRequest, List<NameValuePair> parameters,
             Class<T> clazz) throws ClientProtocolException, IOException {
-        baseRequest.setConfig(requestConfig);
+        if (request.hasTimeout()) {
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setSocketTimeout(request.getTimeout())
+                    .setConnectTimeout(request.getTimeout())
+                    .setConnectionRequestTimeout(request.getTimeout()).build();
+            baseRequest.setConfig(requestConfig);
+        } else {
+            baseRequest.setConfig(defaultRequestConfig);
+        }
+        //
         if (baseRequest instanceof HttpEntityEnclosingRequestBase) {
             HttpEntity entity = new UrlEncodedFormEntity(parameters, "UTF-8");
             ((HttpEntityEnclosingRequestBase) baseRequest).setEntity(entity);
